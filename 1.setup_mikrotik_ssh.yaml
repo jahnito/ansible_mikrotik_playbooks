@@ -1,0 +1,49 @@
+---
+- name: Setup Mikrotik
+  hosts: all
+  become: yes
+  gather_facts: false
+
+  vars:
+    ansuser: "ansuser"
+    anspassword: "159753"
+    group: "full"
+    key_file: "id_rsa.pub"
+
+  tasks:
+  - name: Check Ansible user
+    community.network.routeros_command:
+      commands:
+      - "user print where name={{ ansuser }}"
+    register: created_user
+
+
+  - name: Copy SSH key
+    ansible.netcommon.net_put:
+      src: "{{ key_file }}"
+      protocol: sftp
+    when: not created_user.stdout_lines[-1][-1] is search(ansuser)
+
+
+  - name: Create Ansible user
+    community.network.routeros_command:
+      commands:
+      - "/user add name={{ ansuser }} password={{ anspassword }} group={{ group }}"
+    register: create_user
+    when: not created_user.stdout_lines[-1][-1] is search(ansuser)
+
+
+  - name: Apply SSH pub key for User -> {{ ansuser }}
+    community.network.routeros_command:
+      commands:
+      - "/user ssh-keys import public-key-file={{ key_file }} user={{ ansuser }}"
+    register: apply_key
+    when: not created_user.stdout_lines[-1][-1] is search(ansuser)
+
+
+  - name: Remove SSH pub key file - {{ key_file }}
+    community.network.routeros_command:
+      commands:
+      - "/file remove {{ key_file }}"
+    register: remove_key_file
+    when: not created_user.stdout_lines[-1][-1] is search(ansuser)

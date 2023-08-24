@@ -1,0 +1,33 @@
+---
+- name: Create Mikrotik User (RouterOS 6)
+  hosts: all
+  become: yes
+  gather_facts: false
+
+
+  vars:
+    ans_username: "apetrov"
+    ans_password: "f1reM@an*"
+    ans_group: "full"
+
+
+  tasks:
+  - name: Check Ansible user
+    community.network.routeros_command:
+      commands:
+      - "user print where name={{ ans_username }}"
+    register: created_user
+
+
+  - name: Create User -> "{{ ans_username }}"
+    community.network.routeros_command:
+      commands:
+        - "/user add name={{ ans_username }} password={{ ans_password }} group={{ ans_group }}"
+    register: result
+    when: not created_user.stdout_lines[-1][-1] is search(ans_username)
+
+
+  - name: Show result created User
+    debug:
+      var: result
+...

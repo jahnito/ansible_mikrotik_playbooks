@@ -1,0 +1,17 @@
+---
+- name: Show Facts
+  hosts: 10.180.99.200
+  become: yes
+
+
+  tasks:
+  - name: Gather all avialable facts RouterOS
+    community.routeros.facts:
+      # all, hardware, config, interfaces, and routing
+      gather_subset: hardware
+
+
+  - name: Show Facts
+    debug:
+      var: ansible_facts
+...

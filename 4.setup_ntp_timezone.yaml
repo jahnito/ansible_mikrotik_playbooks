@@ -1,0 +1,50 @@
+---
+- name: Setup NTP Client and Time Zone
+  hosts: all
+  become: yes
+  gather_facts: false
+
+
+  vars:
+    ntp_primary: "10.180.0.50"
+    ntp_secondary: "10.180.0.125"
+    time_zone: "Asia/Yekaterinburg"
+    find_disable_in_stdout: "enabled: no"
+    find_ntp_in_stdout: "primary-ntp: {{ ntp_primary }}"
+    find_time_zone_stdout: "time-zone-name: {{ time_zone }}"
+
+
+  tasks:
+  - name: Gather NTP Data Settings
+    community.network.routeros_command:
+      commands: /system ntp client print
+    register: ntp_dataset
+
+
+  - name: Enable NTP client on RouterOS
+    community.network.routeros_command:
+      commands: /system ntp client set enabled=yes
+    when: ntp_dataset.stdout_lines[0] is search(find_disable_in_stdout)
+
+
+  - name: Set NTP servers
+    community.network.routeros_command:
+      commands: /system ntp client set primary-ntp="{{ ntp_primary }}" secondary-ntp="{{ ntp_secondary }}"
+    when: not ntp_dataset.stdout_lines[0] is search(find_ntp_in_stdout)
+
+
+  - name: Gather Time Zone Settings
+    community.network.routeros_command:
+      commands: /system clock print
+    register: tz_dataset
+
+
+  - name: Set Time Zone
+    community.network.routeros_command:
+      commands: /system clock set time-zone-name={{ time_zone }}
+
+
+  - name: Show if User In Router
+    debug:
+      var: ntp_dataset, tz_dataset
+...

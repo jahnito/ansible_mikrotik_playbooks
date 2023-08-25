@@ -1,13 +1,13 @@
 ---
 - name: Setup NTP Client and Time Zone
-  hosts: all
+  hosts: testing
   become: yes
   gather_facts: false
 
 
   vars:
-    ntp_primary: "10.180.0.50"
-    ntp_secondary: "10.180.0.125"
+    ntp_primary: "10.1.1.1"
+    ntp_secondary: "10.10.10.5"
     time_zone: "Asia/Yekaterinburg"
     find_disable_in_stdout: "enabled: no"
     find_ntp_in_stdout: "primary-ntp: {{ ntp_primary }}"

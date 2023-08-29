@@ -1,0 +1,42 @@
+---
+- name: Setup Logging Server
+  hosts: testing
+  become: yes
+  gather_facts: false
+
+
+  vars:
+    ls_address: "10.10.15.15"
+    ls_port: "514"
+
+
+  tasks:
+  - name: Gather Logging Settings
+    community.network.routeros_command:
+      commands: /system logging action print where name=remote
+    register: logsrv_dataset
+
+
+  - name: Set Log Server IP Address
+    community.network.routeros_command:
+      commands: /system logging action set remote="{{ ls_address }}" remote-port="{{ ls_port }}" remote
+    when: not logsrv_dataset.stdout_lines[0][1] is search(ls_address)
+
+
+  - name: Gather Actions Logging
+    community.network.routeros_command:
+      commands: /system logging print where action=remote
+    register: ls_actions
+
+
+  - name: Set Actions
+    community.network.routeros_command:
+      commands: /system logging add action=remote topics={{ item }}
+    loop:
+      - "critical"
+      - "error"
+      - "info"
+      - "warning"
+    when:
+      - ls_actions.stdout_lines[0][2:]|length == 0
+...
